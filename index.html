@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0c10">
+<meta name="description" content="Incognitho: oscura automaticamente volti e targhe in foto e video, direttamente sul telefono.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Incognitho">
+<title>Incognitho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <button class="logo" id="homeBtn" aria-label="Incognitho, torna all'inizio">INCOGNIT<span class="red">H</span>O</button>
+  <div class="top-r">
+    <span class="status mono" id="status"></span>
+    <button class="btn ghost sm" id="installBtn" hidden>Installa</button>
+  </div>
+</header>
+
+<!-- ============ HOME ============ -->
+<main id="home" class="home">
+  <h1>Volti e targhe,<br><span class="redact">spariti</span>.</h1>
+  <p class="lead">Incognitho trova le persone e le auto nei tuoi video e nelle foto, le segue fotogramma per fotogramma e le copre come vuoi tu: sfocatura, pixel, emoji o barra nera. Ognuna con il suo stile.</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="video/*,image/*">
+    <span class="drop-ico" aria-hidden="true">▇▇▇</span>
+    <b>Apri un video o una foto</b>
+    <span class="mono small">tocca qui · oppure trascina un file</span>
+  </label>
+  <button class="btn big" id="liveBtn"><span class="dot"></span> Fotocamera live</button>
+
+  <ul class="feat">
+    <li><b>Volti</b> riconosciuti anche piccoli e lontani</li>
+    <li><b>Targhe</b> cercate dentro ogni veicolo</li>
+    <li><b>Aree a mano</b>: disegni un riquadro e lui lo insegue</li>
+    <li><b>Niente upload</b>: tutto resta sul telefono</li>
+  </ul>
+  <p class="ios-hint small" id="iosHint" hidden>Per installarla su iPhone: <b>Condividi</b> → <b>Aggiungi alla schermata Home</b>.</p>
+</main>
+
+<!-- ============ EDITOR ============ -->
+<main id="editor" class="editor" hidden>
+  <section class="left">
+    <div class="stage" id="stage">
+      <canvas id="view"></canvas>
+      <div class="stage-hint mono" id="stageHint" hidden>Trascina per disegnare un'area da oscurare</div>
+      <button class="hold" id="holdBtn" title="Tieni premuto per vedere l'originale">👁 Originale</button>
+    </div>
+    <div class="transport" id="transport">
+      <button class="btn icon" id="playBtn" aria-label="Riproduci">▶</button>
+      <span class="mono time" id="time">0:00.0</span>
+      <input type="range" id="scrub" min="0" max="1" step="0.01" value="0" aria-label="Posizione">
+    </div>
+    <canvas id="timeline" class="timeline"></canvas>
+  </section>
+
+  <section class="right">
+    <div class="toolbar">
+      <button class="btn primary" id="analyzeBtn">⚡ Rileva</button>
+      <button class="btn" id="addBtn">＋ Area a mano</button>
+      <button class="btn" id="exportBtn">Esporta ↓</button>
+    </div>
+
+    <details class="panel" id="anaPanel" open>
+      <summary>Rilevamento automatico</summary>
+      <div class="opts">
+        <label class="chk"><input type="checkbox" id="optFace" checked> Volti</label>
+        <label class="chk"><input type="checkbox" id="optPlate" checked> Targhe</label>
+        <label class="chk"><input type="checkbox" id="optWhole"> Targhe in tutta l'immagine</label>
+      </div>
+      <div class="opts">
+        <label>Precisione
+          <select id="optPrec">
+            <option value="fast">Veloce</option>
+            <option value="normal" selected>Normale</option>
+            <option value="high">Alta (volti lontani)</option>
+          </select>
+        </label>
+      </div>
+      <div class="opts">
+        <label>Volti →
+          <select id="defFace"><option value="blur" selected>Sfoca</option><option value="pixel">Pixel</option><option value="emoji">Emoji</option><option value="black">Nero</option></select>
+        </label>
+        <label>Targhe →
+          <select id="defPlate"><option value="blur">Sfoca</option><option value="pixel" selected>Pixel</option><option value="emoji">Emoji</option><option value="black">Nero</option></select>
+        </label>
+      </div>
+    </details>
+
+    <div class="list-head"><h2>Oscurati</h2><span class="mono small" id="count">0</span></div>
+    <div class="tracks" id="tracks">
+      <p class="empty small">Tocca <b>⚡ Rileva</b> per trovare volti e targhe, oppure <b>＋ Area a mano</b> e disegna un riquadro su ciò che vuoi nascondere.</p>
+    </div>
+  </section>
+</main>
+
+<!-- ============ LIVE ============ -->
+<main id="live" class="live" hidden>
+  <video id="cam" class="offscreen" playsinline muted></video>
+  <div class="live-stage">
+    <canvas id="liveView"></canvas>
+    <div class="rec-dot mono" id="recDot" hidden>● REC <span id="recTime">0:00</span></div>
+    <p class="live-tip mono small">Tocca un volto per scoprirlo o ricoprirlo</p>
+  </div>
+  <div class="live-ctrl">
+    <div class="chips" id="liveModes"></div>
+    <div class="emojis" id="liveEmojis"></div>
+    <div class="live-row">
+      <label class="chk"><input type="checkbox" id="liveFace" checked> Volti</label>
+      <label class="chk"><input type="checkbox" id="liveFar"> Lontani</label>
+      <label class="chk"><input type="checkbox" id="livePlate"> Targhe</label>
+    </div>
+    <div class="live-row big-row">
+      <button class="btn icon" id="liveClose" aria-label="Chiudi">✕</button>
+      <button class="shutter" id="snapBtn" aria-label="Scatta foto"></button>
+      <button class="shutter rec" id="recBtn" aria-label="Registra video"></button>
+      <button class="btn icon" id="flipBtn" aria-label="Cambia fotocamera">⟲</button>
+    </div>
+  </div>
+</main>
+
+<!-- ============ MODAL ============ -->
+<div class="modal" id="modal" hidden>
+  <div class="sheet">
+    <h3 id="mTitle">Analisi</h3>
+    <p class="mono small" id="mText"></p>
+    <div class="bar" id="mBarWrap"><i id="mBar"></i></div>
+    <div class="m-media" id="mMedia"></div>
+    <div class="m-btns" id="mBtns"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
